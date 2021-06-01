@@ -1,9 +1,7 @@
-package MC_Module
+package utils
 
 import chisel3._
-//import sv2chisel.helpers.vecconvert._
 import chisel3.util.Cat
-//import chisel3.stage.{ChiselStage, ChiselGeneratorAnnotation}
 
 class vedic2IO extends Bundle {
   val a = Input(UInt(2.W))
@@ -12,7 +10,7 @@ class vedic2IO extends Bundle {
 
 }
 
-class vedic_2x2 extends Module {
+class vedic_2x2 extends RawModule {
  // val reset = IO(Input(Bool()))
  val io = IO(new vedic2IO)
 
@@ -45,7 +43,7 @@ class vedic4IO extends Bundle {
 
 }
 
-class vedic_4x4 extends Module {
+class vedic_4x4 extends RawModule {
   // val reset = IO(Input(Bool()))
   val io = IO(new vedic4IO)
 
@@ -108,7 +106,7 @@ class vedic8IO extends Bundle {
 
 }
 
-class vedic_8x8 extends Module {
+class vedic_8x8 extends RawModule {
   // val reset = IO(Input(Bool()))
   val io = IO(new vedic8IO)
 
@@ -168,11 +166,4 @@ class vedic_8x8 extends Module {
   val result_final = Mux(io.a(8), result_complement, result.asSInt())
 
   io.c:= result_final
-}
-
-object vedic_8x8_generate extends App {
-  //(new chisel3.stage.ChiselStage).execute(args, () => new quad)
-
-  chisel3.Driver.execute(args, () => new vedic_8x8)
-
 }

@@ -12,8 +12,8 @@
 
 package MC_Module
 import chisel3._
-
 import chisel3.iotesters.{Driver, PeekPokeTester}
+import util.vedic_8x8
 
 class Multiplier_Test(c: vedic_8x8) extends PeekPokeTester(c) {
    var data_in1 = -13

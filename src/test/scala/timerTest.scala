@@ -12,8 +12,8 @@
 
 package MC_Module
 import chisel3._
-
 import chisel3.iotesters.{Driver, PeekPokeTester}
+import devices.PWM
 
 class Timer_Test(c: PWM) extends PeekPokeTester(c) {
    var timer_cfg = 7

@@ -12,8 +12,8 @@
 
 package MC_Module
 import chisel3._
-
 import chisel3.iotesters.{Driver, PeekPokeTester}
+import core.Motor_Top
 
 class MC_Module_Test(c: Motor_Top) extends PeekPokeTester(c) {
   var timer_cfg = 0x2F

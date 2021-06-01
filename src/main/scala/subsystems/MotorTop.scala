@@ -1,55 +1,34 @@
-package MC_Module
+package subsystems
 
 import chisel3._
-import chisel3.util.Cat
+import chisel3.util.{Cat, Fill}
+import devices.{PIDController, PWM, QuadEncoder}
+import shells.{CaravelShell, HasPowerPins}
 
-class MotorIO extends Bundle {
-  // Wishbone bus signals
-  val wb_adr_i =  Input(UInt(32.W))
-  val wb_dat_i =  Input(UInt(32.W))
-  val wb_sel_i =  Input(UInt(4.W))
-  val wb_we_i =  Input(Bool())
-  val wb_cyc_i =  Input(Bool())
-  val wb_stb_i =  Input(Bool())
-  val wb_ack_o =  Output(Bool())
-  val wb_dat_o =  Output(UInt(32.W))
+class MotorTop extends CaravelShell{
 
-  val irq =  Output(Bool())
+  override def desiredName: String = "user_project_wrapper"
 
-  // QEI IOs
-  val QEI_ChA = Input(Bool())
-  val QEI_ChB = Input(Bool())
- // val Speed =  Output(UInt(32.W))
-
-  // PWM IOs
-  val pwm_h =  Output(Bool())
-  val pwm_l =  Output(Bool())
-}
-
-
-class Motor_Top extends Module{
-
-  val io = IO(new MotorIO)
-
-  val bus_dat_i = io.wb_dat_i
+  val bus_dat_i = wbs.dat_i
 
   // PID output
   val pid_out = Wire(SInt(16.W))
 
   // Interlink module IO connections
-  val IL_module = Module(new Interlink_Module)
+  val IL_module = caravalModule(new InterlinkModule with HasPowerPins)
 
   // Wiring WB bus with interlink module
-  IL_module.io.bus_stb_i := io.wb_stb_i
-  IL_module.io.bus_cyc_i := io.wb_cyc_i
-  IL_module.io.bus_adr_i := io.wb_adr_i
-  IL_module.io.bus_sel_i := io.wb_sel_i
-  IL_module.io.bus_we_i := io.wb_we_i
-  io.wb_dat_o := IL_module.io.bus_dat_o
-  io.wb_ack_o := IL_module.io.bus_ack_o
+  IL_module.io.bus_stb_i := wbs.stb_i
+  IL_module.io.bus_cyc_i := wbs.cyc_i
+  IL_module.io.bus_adr_i := wbs.adr_i
+  IL_module.io.bus_sel_i := wbs.sel_i
+  IL_module.io.bus_we_i := wbs.we_i
+  wbs.dat_o := IL_module.io.bus_dat_o
+  wbs.ack_o := IL_module.io.bus_ack_o
 
   // Timer module IO connections
-  val timer_module = Module(new PWM)
+  val timer_module = caravalModule(new PWM with HasPowerPins)
+  timer_module.wb <> wb
    timer_module.io.reg_val_we := IL_module.io.tmr_val_we
    timer_module.io.reg_val_di := bus_dat_i
    IL_module.io.tmr_val_do :=  timer_module.io.reg_val_do
@@ -67,17 +46,16 @@ class Motor_Top extends Module{
    IL_module.io.tmr_duty_do :=  timer_module.io.reg_duty_do
 
    timer_module.io.reg_pid_out := pid_out
-   io.irq :=  timer_module.io.irq_out
+   irq :=  timer_module.io.irq_out
 
   // pwm IO connections
-   io.pwm_h :=  timer_module.io.pwm_h
-   io.pwm_l :=  timer_module.io.pwm_l
-
+  io.out :=  Cat(timer_module.io.pwm_h, timer_module.io.pwm_l, 0.U(34.W))
 
   // QEI module and IO connections
-  val QEI = Module(new Quad_Encoder)
-  QEI.io.quadA := io.QEI_ChA
-  QEI.io.quadB := io.QEI_ChB
+  val QEI = caravalModule(new QuadEncoder with HasPowerPins)
+  QEI.wb <> wb
+  QEI.io.quadA := io.in(26)
+  QEI.io.quadB := io.in(27)
 
   QEI.io.reg_count_we := IL_module.io.qei_count_we
   QEI.io.reg_count_di := bus_dat_i
@@ -90,7 +68,8 @@ class Motor_Top extends Module{
   IL_module.io.qei_speed_do := QEI.io.reg_speed_do
 
   // PID module and IO connections
-  val PID = Module(new PID_Controller)
+  val PID = caravalModule(new PIDController with HasPowerPins)
+  PID.wb <> wb
   PID.io.rst := false.B
   PID.io.speed_fb_in := QEI.io.reg_speed_do
 
@@ -121,10 +100,7 @@ class Motor_Top extends Module{
   pid_out := PID.io.pid_out
   PID.io.raw_irq := timer_module.io.rawirq_out
 
-}
+  la.data_out := 0.U(la.data_out.getWidth)
+  io.oeb := Cat(Fill(8, true.B), 0.U(30.W))
 
-object Motor_generate extends App {
-  //(new chisel3.stage.ChiselStage).execute(args, () => new quad)
-
-  chisel3.Driver.execute(args, () => new Motor_Top)
 }

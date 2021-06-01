@@ -12,8 +12,8 @@
 
 package MC_Module
 import chisel3._
-
 import chisel3.iotesters.{Driver, PeekPokeTester}
+import devices.Quad_Encoder
 
 class QEI_Test(c: Quad_Encoder) extends PeekPokeTester(c) {
    var data_in = 6

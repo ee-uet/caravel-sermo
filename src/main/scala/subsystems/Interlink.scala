@@ -1,8 +1,6 @@
-package MC_Module
+package subsystems
 
 import chisel3._
-//import chisel3.stage.{ChiselStage, ChiselGeneratorAnnotation}
-//import sv2chisel.helpers.vecconvert._
 import chisel3.util.Cat
 
 trait Config {
@@ -70,9 +68,11 @@ class InterLinkIO extends Bundle {
 }
 
 
-class Interlink_Module extends Module with Config{
+class InterlinkModule extends RawModule with Config{
 
   val io = IO(new InterLinkIO)
+
+  override def desiredName: String = "InterlinkModule"
 
    val bus_valid = WireInit(Bool(), io.bus_stb_i && io.bus_cyc_i)
 
@@ -182,10 +182,4 @@ class Interlink_Module extends Module with Config{
   pid_fb_do := io.pid_fb_do
   io.pid_cfg_we := pid_cfg_we
   pid_cfg_do := io.pid_cfg_do
-}
-
-object Interlink_generate extends App {
-  //(new chisel3.stage.ChiselStage).execute(args, () => new quad)
-
-  chisel3.Driver.execute(args, () => new Interlink_Module)
 }
